@@ -3,6 +3,7 @@ require 'net/http'
 require 'net/https'
 require 'uri'
 
+require 'grafl/version'
 require 'grafl/graph'
 require 'grafl/node'
 require 'grafl/auth'
