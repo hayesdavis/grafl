@@ -1,6 +1,11 @@
 module Grafl
   
   class Graph
+    
+    SITE = "https://graph.facebook.com"
+    
+    include UriUtils
+    
     attr_accessor :access_token
     
     def initialize(options={})
@@ -24,7 +29,7 @@ module Grafl
     end
     
     def build_uri(method,path,params={})
-      uri_parts = ["https://graph.facebook.com",path]
+      uri_parts = [SITE,path]
       if method == :get && !params.empty?
         uri_parts << to_query_string(params)
       end
@@ -32,23 +37,6 @@ module Grafl
     end
     
     private
-      def to_query_string(params)
-        encoded_params = params.map do |key,value| 
-          "#{uri_encode(key)}=#{uri_encode(value)}"
-        end.join("&")
-        "?#{encoded_params}"
-      end      
-      
-      def uri_encode(value)
-        if value.kind_of?(Array)
-          value.map {|v| uri_encode(v) }.join(",")
-        elsif value.kind_of?(Hash)
-          uri_encode(value.to_json)
-        else
-          URI.encode(value.to_s)
-        end
-      end
-      
       def request_class(method)
         Net::HTTP.const_get(method.to_s.capitalize)
       end

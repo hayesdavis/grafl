@@ -4,6 +4,7 @@ require 'net/https'
 require 'uri'
 
 require 'grafl/version'
+require 'grafl/uri_utils'
 require 'grafl/graph'
 require 'grafl/node'
 require 'grafl/auth'

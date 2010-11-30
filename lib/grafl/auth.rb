@@ -39,9 +39,9 @@ module Grafl
     private
       def process_response(response)
         auth_node = Node.new(graph)
-        response.body.split("&").inject({}) do |h,kv|
-          key,value = kv.split("=")
-          auth_node[key] = value
+        params = UriUtils.parse_query_string(response.body)
+        params.each do |name,value|
+          auth_node[name] = value
         end
         graph.access_token = auth_node.access_token
         auth_node
