@@ -21,15 +21,15 @@ module Grafl
       conn = Net::HTTP.new(uri.host,uri.port)
       conn.use_ssl = true
       conn.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      req = request_class(method).new(uri.request_uri)
       res = conn.start do |http|
-        req = request_class(method).new(uri.request_uri)
         add_headers(req)
         add_form_data(req,params)
         dump_request(req) if debug
         http.request(req)
       end
       dump_response(res) if debug
-      res
+      process_response(uri,req,res)
     end
     
     def build_uri(method,path,params={})
@@ -41,6 +41,48 @@ module Grafl
     end
     
     private
+      def process_response(uri,request,response)
+        body = process_response_body(uri,request,response)
+        status = response.code.to_i
+        if status >= 400
+          msg = body.error.message rescue nil
+          raise Error.new(uri,request,response,body,msg)
+        end
+        if body.kind_of?(Node) && body.error
+          raise Error.new(uri,request,response,body,body.error.message)
+        end
+        body
+      end
+      
+      def process_response_body(uri,request,response)
+        if response.content_type =~ /javascript|json/
+          node = build_node(JSON.parse(response.body))
+          path = uri.path
+          if node.id.nil? && path && path.length > 0
+            node.id = path
+          end
+          node
+        else
+          response.body
+        end
+      rescue => e
+        raise Error.new(uri,request,response,response.body,
+          "Unexpected error processing response: #{e}")
+      end
+      
+      def build_node(value)
+        if value.class == Hash
+          value.inject(Node.new(self)) do |node, (key,v)|
+            node[key] = build_node(v)
+            node
+          end
+        elsif value.class == Array
+          value.map{|v| build_node(v)}
+        else
+          value
+        end
+      end
+    
       def dump_request(req)
         puts "Sending Request"
         puts"#{req.method} #{req.path}"

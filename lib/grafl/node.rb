@@ -4,7 +4,7 @@ module Grafl
   # memory issues.
   class Node
     
-    attr_accessor :graph
+    attr_accessor :graph, :_headers
     
     def initialize(graph)
       self.graph = graph
@@ -70,8 +70,7 @@ module Grafl
     def request(method,*args)
       object_id, params = extract_request_args(*args)
       object_id = absolutize_object_id(object_id)
-      response = graph.request(method,object_id,params)
-      process_response(object_id,response)
+      graph.request(method,object_id,params)
     end
     
     def to_s
@@ -103,33 +102,6 @@ module Grafl
       def absolutize_object_id(object_id)
         [id,object_id].compact.join("/")
       end
-
-      def process_response(object_id,response)
-        node = build_response_recursive(JSON.parse(response.body))
-        if node.id.nil? && object_id && object_id.length > 0
-          node.id = object_id
-        end
-        node
-      end
-      
-      def build_response_recursive(value)
-        if value.class == Hash
-          build_node(value)
-        elsif value.class == Array
-          value.map{|v| build_response_recursive(v)}
-        else
-          value
-        end
-      end
-    
-      def build_node(hash)
-        node = Node.new(self.graph)
-        hash.each do |key,v|
-          node[key] = build_response_recursive(v)
-        end
-        node
-      end 
- 
   end  
   
 end

@@ -39,7 +39,7 @@ module Grafl
     private
       def process_response(response)
         auth_node = Node.new(graph)
-        params = UriUtils.parse_query_string(response.body)
+        params = UriUtils.parse_query_string(response)
         params.each do |name,value|
           auth_node[name] = value
         end
