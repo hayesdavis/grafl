@@ -6,8 +6,6 @@ module Grafl
     
     attr_accessor :graph
     
-    include Enumerable
-    
     def initialize(graph)
       self.graph = graph
       @attributes = {}
@@ -71,13 +69,13 @@ module Grafl
     
     def request(method,*args)
       object_id, params = extract_request_args(*args)
-      absolute_id = [id,object_id].compact.join("/")
-      response = graph.request(method,absolute_id,params)
-      process_response(absolute_id,response)
+      object_id = absolutize_object_id(object_id)
+      response = graph.request(method,object_id,params)
+      process_response(object_id,response)
     end
     
     def to_s
-      "<#{_uri} #{@attributes}>"
+      "<Grafl::Node@#{_uri} #{@attributes}>"
     end
     
     def _uri
@@ -85,7 +83,11 @@ module Grafl
     end
 
     def _metadata
-      graph.get("#{id}",:metadata=>1)
+      get(:metadata=>1)
+    end
+    
+    def _attributes
+      @attributes
     end
         
     protected
@@ -97,10 +99,14 @@ module Grafl
           [arg.to_s,args.shift]
         end
       end
+      
+      def absolutize_object_id(object_id)
+        [id,object_id].compact.join("/")
+      end
 
       def process_response(object_id,response)
         node = build_response_recursive(JSON.parse(response.body))
-        if node.id.nil?
+        if node.id.nil? && object_id && object_id.length > 0
           node.id = object_id
         end
         node
