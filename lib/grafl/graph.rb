@@ -17,7 +17,8 @@ module Grafl
       if access_token
         params[:access_token] = access_token
       end
-      uri = build_uri(method,path,params)
+      uri = build_uri(path,method == :get ? params : {})
+      puts uri.to_s
       conn = Net::HTTP.new(uri.host,uri.port)
       conn.use_ssl = true
       conn.verify_mode = OpenSSL::SSL::VERIFY_NONE
@@ -32,9 +33,16 @@ module Grafl
       process_response(uri,req,res)
     end
     
-    def build_uri(method,path,params={})
+    def get_uri(uri)
+      uri = URI.parse(uri)
+      path = uri.path
+      params = parse_query_string(uri.query).symbolize_keys
+      request(:get,path,params)
+    end
+
+    def build_uri(path,params={})
       uri_parts = [SITE,path]
-      if method == :get && !params.empty?
+      if params && !params.empty?
         uri_parts << to_query_string(params)
       end
       URI.join(*uri_parts)

@@ -4,7 +4,7 @@ module Grafl
   # memory issues.
   class Node
     
-    attr_accessor :graph, :_headers
+    attr_accessor :graph
     
     def initialize(graph)
       self.graph = graph
@@ -69,6 +69,9 @@ module Grafl
     
     def request(method,*args)
       object_id, params = extract_request_args(*args)
+      if object_id.nil? && params.nil? && _uri
+        params = UriUtils.parse_query_string(_uri.query)
+      end
       object_id = absolutize_object_id(object_id)
       graph.request(method,object_id,params)
     end
@@ -78,7 +81,7 @@ module Grafl
     end
     
     def _uri
-      graph.build_uri(:get,id||'').to_s
+      graph.build_uri(id||'')
     end
 
     def _metadata
@@ -88,7 +91,7 @@ module Grafl
     def _attributes
       @attributes
     end
-        
+
     protected
       def extract_request_args(*args)
         arg = args.shift
@@ -102,6 +105,7 @@ module Grafl
       def absolutize_object_id(object_id)
         [id,object_id].compact.join("/")
       end
+    
   end  
   
 end
